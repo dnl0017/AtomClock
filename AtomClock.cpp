@@ -38,7 +38,7 @@ int main() {
 	display.clearDisplay();
 
     while(1){
-        int pulseWidth = pulseIn(RADIO_IN, HIGH, 2000000);
+        int pulseWidth = pulseIn(RADIO_IN, LOW, 2000000);
         pulseWidth /= 1000;
 
         if (pulseWidth > 90)
