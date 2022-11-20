@@ -1,5 +1,6 @@
 {
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "C_Cpp.errorSquiggles": "Disabled"
 /*  "cmake.statusbar.advanced": {
     "debug" : {
       "visibility": "hidden"

@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
@@ -23,6 +24,19 @@ add_subdirectory(/home/dnl/pico/pico-arduino-compat/libs/adafruit-ssd1306 build_
 
 add_executable(AtomClock 
         AtomClock.cpp 
+        Time/Time.cpp
+        Time/DateStrings.cpp
+        Timezone/Timezone.cpp
+        rtc/ds1302.c
+        epd/GUI_Paint.c
+        epd/EPD_2in9_V2.c
+        epd/ImageData.c
+        epd/font8.c
+        epd/font12.c
+        epd/font16.c
+        epd/font20.c
+        epd/font24.c
+        epd/font7seg.c
 )
 
 pico_set_program_name(AtomClock "AtomClock")
@@ -36,6 +50,8 @@ target_link_libraries(AtomClock pico_stdlib
     pac-adafruit-ssd1306
     hardware_spi
     hardware_gpio
+    hardware_pwm
+    pico_multicore
 )
 
 pico_add_extra_outputs(AtomClock)
