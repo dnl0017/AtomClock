@@ -22,7 +22,7 @@ TimeChangeRule mySTD = {"EST", First, Sun, Nov, 2, -300};     // Standard time =
 Timezone myTZ(myDST, mySTD);
 
 // pointer to the time change rule, use to get TZ abbrev
-TimeChangeRule *tcr;      
+TimeChangeRule *tcr;  
 
 void initialize_core0()
 {
@@ -111,8 +111,6 @@ int main() {
 
 	setLEDColor();
 
-	start_new_frame();
-
 	while(1)
 	{
 		check_radio_data();
@@ -147,7 +145,6 @@ void start_new_frame()
 	char buffer[60];
 	datetime_t frame_datetime;
 
-	//if(decode_frame(&frame_datetime)==DECODE_FAIL)
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
 	{
 		printf("Bad Frame\n");
@@ -178,7 +175,7 @@ void pushDateTimeToCore1EPD()
 
 	pack_dt(&tx_buffer, &t);
 
-    multicore_fifo_push_blocking(tx_buffer>>32);
+    multicore_fifo_push_blocking(tx_buffer>>0x20);
     multicore_fifo_push_blocking(tx_buffer);
 
 }
@@ -424,13 +421,12 @@ void core1_epd()
 	datetime_t current_rtc_datetime;
 
     char console_buf[60];    
-	char epd_buf[32];
 
 	while(1)
 	{
         if(multicore_fifo_rvalid()){
 			rx_buffer = multicore_fifo_pop_blocking();
-			rx_buffer = rx_buffer << 32;
+			rx_buffer = rx_buffer << 0x20;
 			rx_buffer |= multicore_fifo_pop_blocking();
 
 			unpack_dt(&rx_buffer, &current_rtc_datetime);
@@ -460,31 +456,11 @@ void updateEPD(time_t t)
     EPD_2IN9_V2_Clear();
 	sleep_ms(100);
 
-    Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
-    Paint_SelectImage(BackImage);
+	formatEPDDate(date_buffer, t, tcr->abbrev);	
+	formatEPDTime(time_buffer, hour(t), minute(t));
 
-    Paint_DrawBitMap(gImage_wwvb);
-	
-	// datetime_to_str(tmp_buffer, 40, t);
-	// char * token = strtok(tmp_buffer, " ");
-	// strcat(date_buffer, token);
-	// strcat(date_buffer, ", ");
-	// token = strtok(NULL, " ");
-	// strcat(date_buffer, token);
-	// strcat(date_buffer, " ");
-	// token = strtok(NULL, " ");
-	// strcat(date_buffer, token);
-	// strcat(date_buffer, " ");
-	// strtok(NULL, " ");
-	// token = strtok(NULL, " ");
-	// strcat(date_buffer, token );
-	// strcat(date_buffer, " ");
-
-	formatEPDDate(date_buffer, t, tcr->abbrev);
-	Paint_DrawString_EN(94, 13, date_buffer, &Font12, EPD_WHITE, EPD_BLACK);
-
-	formatEPDTime(time_buffer, hour(t), minute(t));	
-	Paint_DrawString_EN(110, 67, time_buffer, &Font7seg, EPD_WHITE, EPD_BLACK);		
+    srand(t);
+	theme_table[rand()%3].thm(date_buffer, time_buffer);
 
     EPD_2IN9_V2_Display(BackImage);
 	sleep_ms(300);
@@ -492,7 +468,6 @@ void updateEPD(time_t t)
 	EPD_2IN9_V2_Sleep();
 }
 
-// format a time_t value, with a time zone appended.
 void formatEPDDate(char *buf, time_t t, const char *tz)
 {
     char m[4];    // temporary storage for month string (DateStrings.cpp uses shared buffer)
@@ -550,6 +525,41 @@ time_t datetimeToTimeT(datetime_t * t)
 
 	return makeTime(tm);
 }
+
+//  THEMES!!
+void theme_olde_eng(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+	Paint_Clear(EPD_WHITE);
+    Paint_SelectImage(BackImage);
+
+	Paint_DrawString_EN(14, 8, date, &Font20, EPD_WHITE, EPD_BLACK);
+    Paint_DrawLine(20, 30, 276, 30, EPD_BLACK, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+	Paint_DrawString_EN(10, 36, time, &FontOldeEng, EPD_WHITE, EPD_BLACK);	
+}
+
+void theme_wwvb(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+    Paint_SelectImage(BackImage);
+	Paint_DrawBitMap(gImage_wwvb);
+
+	Paint_DrawString_EN(84, 12, date, &Font16, EPD_WHITE, EPD_BLACK); 
+	Paint_DrawString_EN(120, 70, time, &Font7seg, EPD_WHITE, EPD_BLACK);	
+}
+
+void theme_curly(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+    Paint_SelectImage(BackImage);
+	Paint_DrawBitMap(gImage_curly);
+
+    Paint_DrawRectangle(10, 8, 286, 120, EPD_WHITE, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+
+	Paint_DrawString_EN(10, 104, date, &Font20, EPD_WHITE, EPD_BLACK);
+	Paint_DrawString_EN(10, 8, time, &FontCurly, EPD_WHITE, EPD_BLACK);	
+}
+
 
 /////////////////////////////////////////////	 COMMON     /////////////////////////////////	
 void pack(uint32_t *buf, 

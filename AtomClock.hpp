@@ -66,6 +66,20 @@ void updateEPD(time_t);
 void formatEPDDate(char *, time_t, const char *);
 time_t datetimeToTimeT(datetime_t *);
 
+void theme_olde_eng(char *, char *);
+void theme_wwvb(char *, char *);
+void theme_curly(char *, char *);
+
+typedef void (*theme)(char *, char *);
+const struct{
+	theme thm;
+	const char *name;
+} theme_table[] = {
+	{theme_olde_eng, "Olde"},
+	{theme_wwvb, "WWVB"},
+	{theme_curly, "Curly"}
+};
+
 /////////////////////////////////////////////	 COMMON     /////////////////////////////////	
 void pack(uint32_t *, 
 		  int8_t *, 

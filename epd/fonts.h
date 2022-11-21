@@ -3,8 +3,8 @@
 #define __FONTS_H
 
 /* (32x41) */
-#define MAX_HEIGHT_FONT         41
-#define MAX_WIDTH_FONT          32
+#define MAX_HEIGHT_FONT        90// 41
+#define MAX_WIDTH_FONT         56// 32
 #define OFFSET_BITMAP           
 
 #ifdef __cplusplus
@@ -22,6 +22,8 @@ typedef struct _tFont
   uint16_t Height;  
 } sFONT;
 
+extern sFONT FontCurly;
+extern sFONT FontOldeEng;
 extern sFONT Font7seg;
 extern sFONT Font24;
 extern sFONT Font20;

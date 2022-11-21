@@ -39,6 +39,7 @@ extern "C" {
 /* ------------------------------------------------ */
 // Imagedata
 extern const unsigned char gImage_wwvb[]; 
+extern const unsigned char gImage_curly[]; 
 
 #ifdef __cplusplus
 }

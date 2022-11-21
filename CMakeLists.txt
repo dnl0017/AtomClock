@@ -37,6 +37,9 @@ add_executable(AtomClock
         epd/font20.c
         epd/font24.c
         epd/font7seg.c
+        epd/fontOldeEng.c
+        epd/fontCurly.c
+
 )
 
 pico_set_program_name(AtomClock "AtomClock")
