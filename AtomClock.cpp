@@ -7,7 +7,7 @@ volatile uint8_t pulseWidth = 0;
 
 uint8_t frame[FRAMESIZE];
 uint8_t frameindex = 0;
-datetime_t current_dt;
+datetime_t current_dt, last_sync_time;
 
 //  EPD BackImage ref
 uint8_t *BackImage;
@@ -16,7 +16,7 @@ uint8_t *BackImage;
 // Wire is GPIO 4 & 5, Wire1 is GPIO 10 & 11
 Adafruit_SSD1306 display(LCDWIDTH, LCDHEIGHT, &Wire);
 
-// US Eastern Time Zone (New York, Detroit)
+// Eastern Time Zone (Toronto, New York)
 TimeChangeRule myDST = {"EDT", Second, Sun, Mar, 2, -240};    // Daylight time = UTC - 4 hours
 TimeChangeRule mySTD = {"EST", First, Sun, Nov, 2, -300};     // Standard time = UTC - 5 hours
 Timezone myTZ(myDST, mySTD);
@@ -28,12 +28,7 @@ void initialize_core0()
 {
 	// Init RTC
   	ds1302setup(RTC_SCLCK_PIN, RTC_IO_PIN, RTC_CS_PIN);
-	//sleep_ms(100);
-
-	//  Init WWVB
-    gpio_init(RADIO_IN);
-    gpio_set_dir(RADIO_IN, GPIO_IN);
-	//sleep_ms(2000);
+	sleep_ms(100);
 
     // Init SSD1306 display
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
@@ -43,40 +38,20 @@ void initialize_core0()
 	display.setCursor(0,0);
 	display.println("WWVB");
 	display.display();
-	sleep_ms(1000);
-	display.clearDisplay();
-	display.cp437(true);
-	display.setTextSize(1);
-
-	// // INIT EPD LIGHTING LEDs
-	// gpio_set_function(RGB_R_PIN, GPIO_FUNC_PWM);
-	// gpio_set_function(RGB_G_PIN, GPIO_FUNC_PWM);
-	// gpio_set_function(RGB_B_PIN, GPIO_FUNC_PWM); 
-
-    // // Get some sensible defaults for the slice configuration. By default, the
-    // // counter is allowed to wrap over its maximum range (0 to 2**16-1)
-    // pwm_config config = pwm_get_default_config();
-
-    // // Set divider, reduces counter clock to sysclock/this value
-    // pwm_config_set_clkdiv(&config, 4.f);    
-	// pwm_config_set_wrap(&config, 255);
-
-    // uint slice_num1 = pwm_gpio_to_slice_num(RGB_R_PIN);
-    // pwm_init(slice_num1, &config, true);
-
-    // uint slice_num2 = pwm_gpio_to_slice_num(RGB_G_PIN);
-    // pwm_init(slice_num2, &config, true);
-
-    // uint slice_num3 = pwm_gpio_to_slice_num(RGB_B_PIN);
-    // pwm_init(slice_num3, &config, true);
-
-	// sleep_ms(100);
+	sleep_ms(500);
 
 	// Init acquiring LED
 	gpio_init(ACQ_LED_PIN);
 	gpio_set_dir(ACQ_LED_PIN, GPIO_OUT);    
 	gpio_put(ACQ_LED_PIN, 0);	
+	sleep_ms(100);
 
+	// Init Radio switch
+	gpio_init(RADIO_SWITCH_PIN);
+	gpio_set_dir(RADIO_SWITCH_PIN, GPIO_OUT);    
+    gpio_pull_up(RADIO_SWITCH_PIN);
+	gpio_put(RADIO_SWITCH_PIN, 0);
+	radio_on = false;	
 	sleep_ms(100);
 }
 
@@ -96,32 +71,20 @@ int main() {
     int hz = 100;
     repeating_timer_t timer;
 
-	// Wait until marker
-	// int pw;
-	// do
-	// 	pw = pulseIn(RADIO_IN, LOW, 2000000)/1000;
-	// while((pw < 630) && (pw > 900));
-	// delay(200);
-
     // negative timeout means exact delay (rather than delay between callbacks)
     if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &timer)) {
         printf("Failed to add timer\n");
         exit(-1);
     }
 
-	setLEDColor();
-
-	while(1)
-	{
-		check_radio_data();
-	}
+	while(1)check_radio_data();
 
     return 0;
 }
 
 bool timer_callback(repeating_timer_t *rt) 
 {
-	pulseWidth += !gpio_get(RADIO_IN);	
+	pulseWidth += radio_on ? !gpio_get(RADIO_IN_PIN) : 0;	
 	sampleCounter--;
 	if(sampleCounter<1)
 	{
@@ -140,6 +103,27 @@ bool timer_callback(repeating_timer_t *rt)
     return true; // keep repeating
 }
 
+void check_radio_data()
+{
+	if(newBit != NOBIT)
+	{		
+		if(frameindex>59)
+			start_new_frame();
+		if((newBit==MARKER)&&(oldBit==MARKER))
+			start_new_frame();
+
+		frame[frameindex++] = newBit;
+
+		if(radio_on)
+			display_frame();
+		else
+			display_saver();
+
+		oldBit = newBit;
+		newBit = NOBIT;
+	}
+}
+
 void start_new_frame()
 {
 	char buffer[60];
@@ -152,8 +136,11 @@ void start_new_frame()
 	}
 	else
 	{
+		//frame_datetime.min += 1;  //  Add the lost minute;
 		setRTCDate(&frame_datetime);
 		gpio_put(ACQ_LED_PIN, 1);	
+
+		last_sync_time = frame_datetime;
 
 		datetime_to_str(buffer, 60, &frame_datetime);
 		printf("%s\n", buffer);
@@ -170,10 +157,12 @@ void pushDateTimeToCore1EPD()
 	datetime_t t;
 
 	getRTCDate(&t);
+
 	datetime_to_str(console_buffer, 60, &t);
 	printf("Core0 RTC Time : %s\n", console_buffer);
 
-	pack_dt(&tx_buffer, &t);
+	radio_on = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((t.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
+	pack_dt(&t, &tx_buffer);
 
     multicore_fifo_push_blocking(tx_buffer>>0x20);
     multicore_fifo_push_blocking(tx_buffer);
@@ -185,6 +174,8 @@ void display_frame()
 	char frameindex_str [2];
 
 	display.clearDisplay();
+	display.cp437(true);
+	display.setTextSize(1);
 	display.setCursor(32,0);
 	display.write('B');
 	display.write('i');
@@ -216,6 +207,32 @@ void display_frame()
 		}		
 	}
 	display.display();
+}
+
+void display_saver()
+{
+	char frameindex_str [2];
+
+	display.clearDisplay();
+	display.setTextColor(WHITE);
+	display.setTextSize(6);
+	display.setCursor(32, 12);
+
+	itoa(frameindex-1, frameindex_str, 10);
+
+	if(strlen(frameindex_str) < 2)
+	{
+		display.write(' ');
+		display.write(frameindex_str[0]);	
+	}
+	else
+	{
+		display.write(frameindex_str[0]);
+		display.write(frameindex_str[1]);
+	}
+
+	display.display();
+
 }
 
 uint8_t decode_frame(datetime_t *t)
@@ -292,24 +309,6 @@ uint8_t decode_frame(datetime_t *t)
 	return DECODE_SUCCESS;
 }
 
-void check_radio_data()
-{
-	if(newBit != NOBIT)
-	{		
-		if(frameindex>59)
-			start_new_frame();
-		if((newBit==MARKER)&&(oldBit==MARKER))
-			start_new_frame();
-
-		frame[frameindex++] = newBit;
-
-		display_frame();
-
-		oldBit = newBit;
-		newBit = NOBIT;
-	}
-}
-
 static void setRTCDate(datetime_t * t)
 {  
   uint32_t clock [8];
@@ -341,28 +340,13 @@ static void getRTCDate(datetime_t * t)
 
 }
 
-static void setLEDColor()
-{
-	//srand(time_us_32());
-
-	for(int i = 0; i < 256; i+=32)
-		for(int j = 0; j < 256; j+=32)
-			for(int k = 0; k < 256; k+=32)
-			{				
-				pwm_set_gpio_level(RGB_R_PIN, i);
-				pwm_set_gpio_level(RGB_G_PIN, j);
-				pwm_set_gpio_level(RGB_B_PIN, k);
-				sleep_ms(10);	
-			}
-}
-
 void setDateTime()
 {
 	datetime_t t;
 	t.day = 20;
 	t.dotw = 0;
-	t.hour = 3;
-	t.min = 6;
+	t.hour = 0;
+	t.min = 50;
 	t.month = 11;
 	t.sec = 0;
 	t.year = 2022;
@@ -419,6 +403,7 @@ void core1_epd()
 
 	uint64_t rx_buffer;	
 	datetime_t current_rtc_datetime;
+	static bool radio_initialized = false;
 
     char console_buf[60];    
 
@@ -431,10 +416,12 @@ void core1_epd()
 
 			unpack_dt(&rx_buffer, &current_rtc_datetime);
 
+			power_radio(&radio_initialized);
+
 			datetime_to_str(console_buf, 60, &current_rtc_datetime);
 			printf("Core1 RTC Time : %s\n", console_buf);
 
-			time_t utc = datetimeToTimeT(&current_rtc_datetime);
+			time_t utc = datetimeToTimeT(&current_rtc_datetime) + 60;
 
 		    setTime(utc);
 
@@ -459,8 +446,7 @@ void updateEPD(time_t t)
 	formatEPDDate(date_buffer, t, tcr->abbrev);	
 	formatEPDTime(time_buffer, hour(t), minute(t));
 
-    srand(t);
-	theme_table[rand()%3].thm(date_buffer, time_buffer);
+	theme_table[thm_counter++ % (sizeof(theme_table) / 8)].thm(date_buffer, time_buffer);
 
     EPD_2IN9_V2_Display(BackImage);
 	sleep_ms(300);
@@ -488,7 +474,7 @@ void formatEPDTime(char * buf, int8_t hour, int8_t min)
 	itoa(hour, tmp, 10);
 	if(strlen(tmp)<2){
 		tmp[1] = tmp[0] - 16;
-		tmp[0] = 43;
+		tmp[0] = 32; //  32 = 0, 43 = space;
 	} else {
 		tmp[0] -= 16;
 		tmp[1] -= 16;
@@ -526,6 +512,21 @@ time_t datetimeToTimeT(datetime_t * t)
 	return makeTime(tm);
 }
 
+void power_radio(bool * init)
+{
+	if(radio_on)
+		if(!(*init))
+		{
+			gpio_init(RADIO_IN_PIN);
+			gpio_set_dir(RADIO_IN_PIN, GPIO_IN);
+			*init = true;
+		}
+	else
+		*init = false;
+
+	gpio_put(RADIO_SWITCH_PIN, radio_on);
+} 
+
 //  THEMES!!
 void theme_olde_eng(char *date, char *time)
 {    
@@ -554,10 +555,42 @@ void theme_curly(char *date, char *time)
     Paint_SelectImage(BackImage);
 	Paint_DrawBitMap(gImage_curly);
 
-    Paint_DrawRectangle(10, 8, 286, 120, EPD_WHITE, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+    Paint_DrawRectangle(10, 23, 290, 104, EPD_WHITE, DOT_PIXEL_1X1, DRAW_FILL_FULL);
 
-	Paint_DrawString_EN(10, 104, date, &Font20, EPD_WHITE, EPD_BLACK);
-	Paint_DrawString_EN(10, 8, time, &FontCurly, EPD_WHITE, EPD_BLACK);	
+	//Paint_DrawString_EN(10, 104, date, &Font20, EPD_WHITE, EPD_BLACK);
+	Paint_DrawString_EN(10, 19, time, &FontCurly, EPD_WHITE, EPD_BLACK);	
+}
+
+void theme_city(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+    Paint_SelectImage(BackImage);
+	Paint_DrawBitMap(gImage_city);
+
+	Paint_DrawString_EN(158, 112, date, &Font12, EPD_BLACK, EPD_WHITE); 
+	Paint_DrawString_EN(10, 5, time, &FontBroadway, EPD_WHITE, EPD_BLACK);	
+}
+
+void theme_text(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+	Paint_Clear(EPD_BLACK);
+    Paint_SelectImage(BackImage);
+
+	Paint_DrawString_EN(10, 38, time, &FontOldeEng, EPD_BLACK, EPD_WHITE);	
+	Paint_DrawRectangle(0, 0, 296, 41, EPD_WHITE, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+	Paint_DrawString_EN(0, 0, "\"Without music, life would be a mistake.\" ", &Font16, EPD_WHITE, EPD_BLACK);		
+	Paint_DrawString_EN(140, 28, "  -Friedrich Nietzsche", &Font12, EPD_WHITE, EPD_BLACK);	
+}
+
+void theme_flash(char *date, char *time)
+{    
+	Paint_NewImage(BackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 90, EPD_WHITE);  
+    Paint_SelectImage(BackImage);
+	Paint_DrawBitMap(gImage_flash);
+
+	Paint_DrawString_EN(80, 44, time, &Font7seg, EPD_WHITE, EPD_BLACK);	
+	Paint_DrawString_EN(80, 116, date, &Font12, EPD_WHITE, EPD_BLACK); 
 }
 
 
@@ -587,21 +620,21 @@ void unpack(uint32_t *buf,
 	*b4 = *buf;
 }
 
-void pack_dt(uint64_t *src, 
-			 datetime_t * dest){
-	*src |= dest->year;
-	*src <<= 8;
-	*src |= dest->month;
-	*src <<= 8;
-	*src |= dest->day;
-	*src <<= 8;
-	*src |= dest->dotw;
-	*src <<= 8;
-	*src |= dest->hour;
-	*src <<= 8;
-	*src |= dest->min;
-	*src <<= 8;
-	*src |= dest->sec;
+void pack_dt(datetime_t * src,
+			 uint64_t * dest){
+	*dest |= src->year;
+	*dest <<= 8;
+	*dest |= src->month;
+	*dest <<= 8;
+	*dest |= src->day;
+	*dest <<= 8;
+	*dest |= src->dotw;
+	*dest <<= 8;
+	*dest |= src->hour;
+	*dest <<= 8;
+	*dest |= src->min;
+	*dest <<= 8;
+	*dest |= src->sec;
 }
 
 void unpack_dt(uint64_t *src, 

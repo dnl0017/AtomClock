@@ -39,6 +39,7 @@ add_executable(AtomClock
         epd/font7seg.c
         epd/fontOldeEng.c
         epd/fontCurly.c
+        epd/fontBroadway.c
 
 )
 
