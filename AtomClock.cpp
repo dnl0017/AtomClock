@@ -1,5 +1,88 @@
 #include "AtomClock.hpp"
 
+// uint8_t decode_frame(datetime_t *t)
+// {
+// 	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+// 	toggle++;
+// 	toggle = toggle % 2;
+// 	if( frame_TEST[toggle][0]  != MARKER ) 
+// 		return DECODE_FAIL;
+// 	for(uint8_t i = 1; i<60; i++)
+// 		if( frame_TEST[toggle][i] == ERRBIT || i % 10 == 9 && frame_TEST[toggle][i] != MARKER ) 
+// 			return DECODE_FAIL;
+// 	uint8_t leap = 0;
+// 	leap += frame_TEST[toggle][55]==HIGHBIT?1:0;
+// 	uint8_t dst = 0;
+// 	dst += frame_TEST[toggle][58]==HIGHBIT?1:0;
+// 	uint16_t dayOfYear = 0;
+//  	dayOfYear += frame_TEST[toggle][22]==HIGHBIT?200:0;
+//  	dayOfYear += frame_TEST[toggle][23]==HIGHBIT?100:0;
+//  	dayOfYear += frame_TEST[toggle][25]==HIGHBIT?80:0;
+//  	dayOfYear += frame_TEST[toggle][26]==HIGHBIT?40:0;
+//  	dayOfYear += frame_TEST[toggle][27]==HIGHBIT?20:0;
+//  	dayOfYear += frame_TEST[toggle][28]==HIGHBIT?10:0;
+//  	dayOfYear += frame_TEST[toggle][30]==HIGHBIT?8:0;
+//  	dayOfYear += frame_TEST[toggle][31]==HIGHBIT?4:0;
+//  	dayOfYear += frame_TEST[toggle][32]==HIGHBIT?2:0;
+//  	dayOfYear += frame_TEST[toggle][33]==HIGHBIT?1:0;
+// 	t->month = 1;
+// 	while(1)
+// 	{
+// 		uint16_t dim = daysInMonth[t->month];
+// 		if(t->month == 2 && leap == 1) dim++;
+// 		if(dayOfYear <= dim) break;
+// 		dayOfYear -= dim;
+// 		t->month++;
+// 	}
+// 	t->day = dayOfYear;
+//   	t->dotw = 0;
+// 	t->sec = 0;
+// 	t->min = 0;
+// 	t->min += frame_TEST[toggle][1]==HIGHBIT?40:0;
+// 	t->min += frame_TEST[toggle][2]==HIGHBIT?20:0;
+// 	t->min += frame_TEST[toggle][3]==HIGHBIT?10:0;
+// 	t->min += frame_TEST[toggle][5]==HIGHBIT?8:0;
+// 	t->min += frame_TEST[toggle][6]==HIGHBIT?4:0;
+// 	t->min += frame_TEST[toggle][7]==HIGHBIT?2:0;
+// 	t->min += frame_TEST[toggle][8]==HIGHBIT?1:0;
+// 	t->hour = 0;
+// 	t->hour += frame_TEST[toggle][12]==HIGHBIT?20:0;
+// 	t->hour += frame_TEST[toggle][13]==HIGHBIT?10:0;
+// 	t->hour += frame_TEST[toggle][15]==HIGHBIT?8:0;
+// 	t->hour += frame_TEST[toggle][16]==HIGHBIT?4:0;
+// 	t->hour += frame_TEST[toggle][17]==HIGHBIT?2:0;
+// 	t->hour += frame_TEST[toggle][18]==HIGHBIT?1:0;
+// 	t->year = millenium;
+// 	t->year += frame_TEST[toggle][45]==HIGHBIT?80:0;
+// 	t->year += frame_TEST[toggle][46]==HIGHBIT?40:0;
+// 	t->year += frame_TEST[toggle][47]==HIGHBIT?20:0;
+// 	t->year += frame_TEST[toggle][48]==HIGHBIT?10:0;
+// 	t->year += frame_TEST[toggle][50]==HIGHBIT?8:0;
+// 	t->year += frame_TEST[toggle][51]==HIGHBIT?4:0;
+// 	t->year += frame_TEST[toggle][52]==HIGHBIT?2:0;
+// 	t->year += frame_TEST[toggle][53]==HIGHBIT?1:0;
+// 	return DECODE_SUCCESS;
+// }
+// uint8_t frame_TEST[2][FRAMESIZE] = {
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	}
+// };
+// static uint8_t toggle = 0;
+
 volatile uint8_t sampleCounter = 100;
 volatile uint8_t newBit = NOBIT;
 volatile uint8_t oldBit = NOBIT;
@@ -53,6 +136,11 @@ void initialize_core0()
 	gpio_put(RADIO_SWITCH_PIN, 0);
 	radio_on = false;	
 	sleep_ms(100);
+
+	// Take over counting seconds from RTC.
+	getRTCDate(&current_dt);
+	frameindex = current_dt.sec;
+
 }
 
 int main() {
@@ -73,7 +161,9 @@ int main() {
 
     // negative timeout means exact delay (rather than delay between callbacks)
     if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &timer)) {
+#if DEBUG
         printf("Failed to add timer\n");
+#endif
         exit(-1);
     }
 
@@ -109,7 +199,7 @@ void check_radio_data()
 	{		
 		if(frameindex>59)
 			start_new_frame();
-		if((newBit==MARKER)&&(oldBit==MARKER))
+		else if((newBit==MARKER)&&(oldBit==MARKER))
 			start_new_frame();
 
 		frame[frameindex++] = newBit;
@@ -131,21 +221,24 @@ void start_new_frame()
 
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
 	{
+#if DEBUG
 		printf("Bad Frame\n");
+#endif
 		gpio_put(ACQ_LED_PIN, 0);	
 	}
 	else
 	{
-		//frame_datetime.min += 1;  //  Add the lost minute;
 		setRTCDate(&frame_datetime);
 		gpio_put(ACQ_LED_PIN, 1);	
 
 		last_sync_time = frame_datetime;
-
+#if DEBUG
 		datetime_to_str(buffer, 60, &frame_datetime);
 		printf("%s\n", buffer);
+#endif
 	}
 
+	getRTCDate(&current_dt);
 	pushDateTimeToCore1EPD();
 	frameindex = 0;
 }
@@ -154,19 +247,16 @@ void pushDateTimeToCore1EPD()
 {
 	uint64_t tx_buffer;
 	char console_buffer[60];
-	datetime_t t;
-
-	getRTCDate(&t);
-
-	datetime_to_str(console_buffer, 60, &t);
+#if DEBUG
+	datetime_to_str(console_buffer, 60, &current_dt);
 	printf("Core0 RTC Time : %s\n", console_buffer);
+#endif
 
-	radio_on = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((t.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
-	pack_dt(&t, &tx_buffer);
+	radio_on = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((current_dt.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
+	pack_dt(&current_dt, &tx_buffer);
 
     multicore_fifo_push_blocking(tx_buffer>>0x20);
     multicore_fifo_push_blocking(tx_buffer);
-
 }
 
 void display_frame()
@@ -237,22 +327,16 @@ void display_saver()
 
 uint8_t decode_frame(datetime_t *t)
 {
-	const int16_t millenium = 2000;
 	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
 	if( frame[0]  != MARKER ) 
 		return DECODE_FAIL;
-
 	for(uint8_t i = 1; i<60; i++)
 		if( frame[i] == ERRBIT || i % 10 == 9 && frame[i] != MARKER ) 
 			return DECODE_FAIL;
-
 	uint8_t leap = 0;
 	leap += frame[55]==HIGHBIT?1:0;
-
 	uint8_t dst = 0;
 	dst += frame[58]==HIGHBIT?1:0;
-
 	uint16_t dayOfYear = 0;
  	dayOfYear += frame[22]==HIGHBIT?200:0;
  	dayOfYear += frame[23]==HIGHBIT?100:0;
@@ -264,7 +348,6 @@ uint8_t decode_frame(datetime_t *t)
  	dayOfYear += frame[31]==HIGHBIT?4:0;
  	dayOfYear += frame[32]==HIGHBIT?2:0;
  	dayOfYear += frame[33]==HIGHBIT?1:0;
-	
 	t->month = 1;
 	while(1)
 	{
@@ -274,11 +357,9 @@ uint8_t decode_frame(datetime_t *t)
 		dayOfYear -= dim;
 		t->month++;
 	}
-
 	t->day = dayOfYear;
   	t->dotw = 0;
-	t->sec = 0;
-
+	t->sec = 0; 
 	t->min = 0;
 	t->min += frame[1]==HIGHBIT?40:0;
 	t->min += frame[2]==HIGHBIT?20:0;
@@ -287,7 +368,6 @@ uint8_t decode_frame(datetime_t *t)
 	t->min += frame[6]==HIGHBIT?4:0;
 	t->min += frame[7]==HIGHBIT?2:0;
 	t->min += frame[8]==HIGHBIT?1:0;
- 
 	t->hour = 0;
 	t->hour += frame[12]==HIGHBIT?20:0;
 	t->hour += frame[13]==HIGHBIT?10:0;
@@ -295,7 +375,6 @@ uint8_t decode_frame(datetime_t *t)
 	t->hour += frame[16]==HIGHBIT?4:0;
 	t->hour += frame[17]==HIGHBIT?2:0;
 	t->hour += frame[18]==HIGHBIT?1:0;
-
 	t->year = millenium;
 	t->year += frame[45]==HIGHBIT?80:0;
 	t->year += frame[46]==HIGHBIT?40:0;
@@ -305,7 +384,6 @@ uint8_t decode_frame(datetime_t *t)
 	t->year += frame[51]==HIGHBIT?4:0;
 	t->year += frame[52]==HIGHBIT?2:0;
 	t->year += frame[53]==HIGHBIT?1:0;
-
 	return DECODE_SUCCESS;
 }
 
@@ -319,7 +397,7 @@ static void setRTCDate(datetime_t * t)
   clock [3] = dToBcd (t->day) ;	// day of the month 1-31
   clock [4] = dToBcd (t->month); // months 0-11 --> 1-12
   clock [5] = dToBcd (t->dotw) ;	// weekdays (sun 0)
-  clock [6] = dToBcd (t->year-2000) ; // years
+  clock [6] = dToBcd (t->year-millenium) ; // years
   clock [7] = 0 ;			// W-Protect off
   ds1302clockWrite (clock) ;
 
@@ -336,7 +414,7 @@ static void getRTCDate(datetime_t * t)
     t->day = bcdToD(clock[3], masks [3]);
     t->month = bcdToD(clock[4], masks [4]);
     t->dotw = bcdToD(clock[5], masks [5]);
-    t->year = bcdToD(clock[6], masks [6]) + 2000;
+    t->year = bcdToD(clock[6], masks [6]) + millenium;
 
 }
 
@@ -387,7 +465,9 @@ int initialize_core1()
 
     uint16_t Imagesize = ((EPD_2IN9_V2_WIDTH % 8 == 0) ? (EPD_2IN9_V2_WIDTH / 8 ): (EPD_2IN9_V2_WIDTH / 8 + 1)) * EPD_2IN9_V2_HEIGHT;
     if((BackImage = (uint8_t*)malloc(Imagesize)) == NULL) {
+#if DEBUG
         printf("Failed to apply for black memory...\r\n");
+#endif
         return -1;
     }
 
@@ -397,7 +477,9 @@ int initialize_core1()
 void core1_epd()
 {
 	if(0>initialize_core1()){
+#if DEBUG
 		printf("Error initializing EPD... \n");
+#endif
 		return;
 	}
 
@@ -417,10 +499,10 @@ void core1_epd()
 			unpack_dt(&rx_buffer, &current_rtc_datetime);
 
 			power_radio(&radio_initialized);
-
+#if DEBUG
 			datetime_to_str(console_buf, 60, &current_rtc_datetime);
 			printf("Core1 RTC Time : %s\n", console_buf);
-
+#endif
 			time_t utc = datetimeToTimeT(&current_rtc_datetime) + 60;
 
 		    setTime(utc);
@@ -447,6 +529,7 @@ void updateEPD(time_t t)
 	formatEPDTime(time_buffer, hour(t), minute(t));
 
 	theme_table[thm_counter++ % (sizeof(theme_table) / 8)].thm(date_buffer, time_buffer);
+	
 
     EPD_2IN9_V2_Display(BackImage);
 	sleep_ms(300);
@@ -463,7 +546,9 @@ void formatEPDDate(char *buf, time_t t, const char *tz)
 									 m, 
 									 year(t), 
 									 tz);
+#if DEBUG
 	printf("%s\n", buf);
+#endif
 }
 
 void formatEPDTime(char * buf, int8_t hour, int8_t min)
@@ -579,8 +664,9 @@ void theme_text(char *date, char *time)
 
 	Paint_DrawString_EN(10, 38, time, &FontOldeEng, EPD_BLACK, EPD_WHITE);	
 	Paint_DrawRectangle(0, 0, 296, 41, EPD_WHITE, DOT_PIXEL_1X1, DRAW_FILL_FULL);
-	Paint_DrawString_EN(0, 0, "\"Without music, life would be a mistake.\" ", &Font16, EPD_WHITE, EPD_BLACK);		
-	Paint_DrawString_EN(140, 28, "  -Friedrich Nietzsche", &Font12, EPD_WHITE, EPD_BLACK);	
+
+	Paint_DrawString_EN(0, 0, quotes[qt_counter % (sizeof(quotes) / 8)].qt, &Font16, EPD_WHITE, EPD_BLACK);		
+	Paint_DrawString_EN(140, 28, quotes[qt_counter++ % (sizeof(quotes) / 8)].person, &Font12, EPD_WHITE, EPD_BLACK);	
 }
 
 void theme_flash(char *date, char *time)

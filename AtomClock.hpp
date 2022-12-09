@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+#define DEBUG				1
+
 #define ERRBIT			 	4			
 #define MARKER 			 	3
 #define NOBIT			 	2
@@ -44,6 +46,7 @@ extern "C" {
 #define RADIO_OFF_TIME_UTC  10   // 0 .. 23
 
 static bool radio_on;
+static const int16_t millenium = 2000;
 bool timer_callback(repeating_timer_t *);
 void start_new_frame();
 void check_radio_data();
@@ -86,6 +89,24 @@ const struct{
 	{theme_curly, "Curly"},
 	{theme_city, "City"},
 	{theme_flash, "Flash"}
+};
+
+static unsigned int qt_counter = 0;
+const struct{
+	const char *qt;
+	const char *person;
+} quotes[] = {
+	{"\"Without music, life would be a mistake.\"", "  -Friedrich Nietzsche"},
+	{"\"Atheism is a non-prophet organization.\"", "   -George Carlin"},
+	{"\"Politics are not my arena Music is.\"", "-Aretha Franklin"},
+	{"\"A winner is a dreamer who never gives up.\"", "       -Nelson Mandela"},
+	{"\"Cow with no legs, ground beef.\"", "-Confucius"},
+	{"\"What one fool can         understand, another can.\"", "      -Richard Feynman"},
+	{"\"The spirit of envy can   destroy but never build.\"", "    -Margaret Thatcher"},
+	{"\"The higher up I went, the less happy I was.\"", "        -Dave Chapelle"},
+	{"\"If you're going through  hell, keep going.\"", "    -Winston Churchill"},
+	{"\"Even communism works...  in theory.\"", "-Homer Simpson"},
+	{"\"I enjoy the last quarter of all basketball games.\"", "      -Sarah Silverman"}
 };
 
 /////////////////////////////////////////////	 COMMON     /////////////////////////////////	
