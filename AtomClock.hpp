@@ -16,6 +16,8 @@
 #include "Adafruit_SSD1306.h"
 #include "rtc/ds1302.h"
 #include "Timezone/Timezone.h"
+#include "hygrothermograph/DHT.hpp"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,13 +41,15 @@ extern "C" {
 #define RTC_SCLCK_PIN	 	18
 
 #define ACQ_LED_PIN  	 	12
+#define DHT11_PIN			11
 
 #define RADIO_IN_PIN	 	19
 #define RADIO_SWITCH_PIN 	9
-#define RADIO_ON_TIME_UTC   1   // 0 .. 23
+#define RADIO_ON_TIME_UTC   1    // 0 .. 23
 #define RADIO_OFF_TIME_UTC  10   // 0 .. 23
 
 static bool radio_on;
+static bool is_datetime_acquired;
 static const int16_t millenium = 2000;
 bool timer_callback(repeating_timer_t *);
 void start_new_frame();

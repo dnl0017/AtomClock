@@ -1,171 +1,180 @@
 #include "AtomClock.hpp"
 
-static uint8_t toggle = -1;
-uint8_t frame_TEST[11][FRAMESIZE] = {
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	},
-	{
-	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
-	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
-	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
-	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
-	}
-};
+// #if DEBUG==1
 
-uint8_t decode_frame(datetime_t *t)
-{
-	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-	toggle++;
-	toggle = toggle % 11;
-	if( frame_TEST[toggle][0]  != MARKER ) 
-		return DECODE_FAIL;
-	for(uint8_t i = 1; i<60; i++)
-		if( frame_TEST[toggle][i] == ERRBIT || i % 10 == 9 && frame_TEST[toggle][i] != MARKER ) 
-			return DECODE_FAIL;
-	uint8_t leap = 0;
-	leap += frame_TEST[toggle][55]==HIGHBIT?1:0;
-	uint8_t dst = 0;
-	dst += frame_TEST[toggle][58]==HIGHBIT?1:0;
-	uint16_t dayOfYear = 0;
- 	dayOfYear += frame_TEST[toggle][22]==HIGHBIT?200:0;
- 	dayOfYear += frame_TEST[toggle][23]==HIGHBIT?100:0;
- 	dayOfYear += frame_TEST[toggle][25]==HIGHBIT?80:0;
- 	dayOfYear += frame_TEST[toggle][26]==HIGHBIT?40:0;
- 	dayOfYear += frame_TEST[toggle][27]==HIGHBIT?20:0;
- 	dayOfYear += frame_TEST[toggle][28]==HIGHBIT?10:0;
- 	dayOfYear += frame_TEST[toggle][30]==HIGHBIT?8:0;
- 	dayOfYear += frame_TEST[toggle][31]==HIGHBIT?4:0;
- 	dayOfYear += frame_TEST[toggle][32]==HIGHBIT?2:0;
- 	dayOfYear += frame_TEST[toggle][33]==HIGHBIT?1:0;
-	t->month = 1;
-	while(1)
-	{
-		uint16_t dim = daysInMonth[t->month];
-		if(t->month == 2 && leap == 1) dim++;
-		if(dayOfYear <= dim) break;
-		dayOfYear -= dim;
-		t->month++;
-	}
-	t->day = dayOfYear;
-  	t->dotw = 0;
-	t->sec = 0;
-	t->min = 0;
-	t->min += frame_TEST[toggle][1]==HIGHBIT?40:0;
-	t->min += frame_TEST[toggle][2]==HIGHBIT?20:0;
-	t->min += frame_TEST[toggle][3]==HIGHBIT?10:0;
-	t->min += frame_TEST[toggle][5]==HIGHBIT?8:0;
-	t->min += frame_TEST[toggle][6]==HIGHBIT?4:0;
-	t->min += frame_TEST[toggle][7]==HIGHBIT?2:0;
-	t->min += frame_TEST[toggle][8]==HIGHBIT?1:0;
-	t->hour = 0;
-	t->hour += frame_TEST[toggle][12]==HIGHBIT?20:0;
-	t->hour += frame_TEST[toggle][13]==HIGHBIT?10:0;
-	t->hour += frame_TEST[toggle][15]==HIGHBIT?8:0;
-	t->hour += frame_TEST[toggle][16]==HIGHBIT?4:0;
-	t->hour += frame_TEST[toggle][17]==HIGHBIT?2:0;
-	t->hour += frame_TEST[toggle][18]==HIGHBIT?1:0;
-	t->year = millenium;
-	t->year += frame_TEST[toggle][45]==HIGHBIT?80:0;
-	t->year += frame_TEST[toggle][46]==HIGHBIT?40:0;
-	t->year += frame_TEST[toggle][47]==HIGHBIT?20:0;
-	t->year += frame_TEST[toggle][48]==HIGHBIT?10:0;
-	t->year += frame_TEST[toggle][50]==HIGHBIT?8:0;
-	t->year += frame_TEST[toggle][51]==HIGHBIT?4:0;
-	t->year += frame_TEST[toggle][52]==HIGHBIT?2:0;
-	t->year += frame_TEST[toggle][53]==HIGHBIT?1:0;
-	return DECODE_SUCCESS;
-}
+// static uint8_t toggle = -1;
+// uint8_t frame_TEST[11][FRAMESIZE] = {
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	MARKER, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	},
+// 	{
+// 	HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT,  MARKER,
+// 	LOWBIT, HIGHBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, HIGHBIT, MARKER,
+// 	LOWBIT, LOWBIT,  LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, HIGHBIT, LOWBIT, MARKER,
+// 	LOWBIT, LOWBIT,  HIGHBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, LOWBIT, MARKER
+// 	}
+// };
+
+// uint8_t decode_frame(datetime_t *t)
+// {
+// 	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+// 	toggle++;
+// 	toggle = toggle % 11;
+// 	if( frame_TEST[toggle][0]  != MARKER ) 
+// 		return DECODE_FAIL;
+// 	for(uint8_t i = 1; i<60; i++)
+// 		if( frame_TEST[toggle][i] == ERRBIT || i % 10 == 9 && frame_TEST[toggle][i] != MARKER ) 
+// 			return DECODE_FAIL;
+// 	uint8_t leap = 0;
+// 	leap += frame_TEST[toggle][55]==HIGHBIT?1:0;
+// 	uint8_t dst = 0;
+// 	dst += frame_TEST[toggle][58]==HIGHBIT?1:0;
+// 	uint16_t dayOfYear = 0;
+//  	dayOfYear += frame_TEST[toggle][22]==HIGHBIT?200:0;
+//  	dayOfYear += frame_TEST[toggle][23]==HIGHBIT?100:0;
+//  	dayOfYear += frame_TEST[toggle][25]==HIGHBIT?80:0;
+//  	dayOfYear += frame_TEST[toggle][26]==HIGHBIT?40:0;
+//  	dayOfYear += frame_TEST[toggle][27]==HIGHBIT?20:0;
+//  	dayOfYear += frame_TEST[toggle][28]==HIGHBIT?10:0;
+//  	dayOfYear += frame_TEST[toggle][30]==HIGHBIT?8:0;
+//  	dayOfYear += frame_TEST[toggle][31]==HIGHBIT?4:0;
+//  	dayOfYear += frame_TEST[toggle][32]==HIGHBIT?2:0;
+//  	dayOfYear += frame_TEST[toggle][33]==HIGHBIT?1:0;
+// 	t->month = 1;
+// 	while(1)
+// 	{
+// 		uint16_t dim = daysInMonth[t->month];
+// 		if(t->month == 2 && leap == 1) dim++;
+// 		if(dayOfYear <= dim) break;
+// 		dayOfYear -= dim;
+// 		t->month++;
+// 	}
+// 	t->day = dayOfYear;
+//   	t->dotw = 0;
+// 	t->sec = 0;
+// 	t->min = 0;
+// 	t->min += frame_TEST[toggle][1]==HIGHBIT?40:0;
+// 	t->min += frame_TEST[toggle][2]==HIGHBIT?20:0;
+// 	t->min += frame_TEST[toggle][3]==HIGHBIT?10:0;
+// 	t->min += frame_TEST[toggle][5]==HIGHBIT?8:0;
+// 	t->min += frame_TEST[toggle][6]==HIGHBIT?4:0;
+// 	t->min += frame_TEST[toggle][7]==HIGHBIT?2:0;
+// 	t->min += frame_TEST[toggle][8]==HIGHBIT?1:0;
+// 	t->hour = 0;
+// 	t->hour += frame_TEST[toggle][12]==HIGHBIT?20:0;
+// 	t->hour += frame_TEST[toggle][13]==HIGHBIT?10:0;
+// 	t->hour += frame_TEST[toggle][15]==HIGHBIT?8:0;
+// 	t->hour += frame_TEST[toggle][16]==HIGHBIT?4:0;
+// 	t->hour += frame_TEST[toggle][17]==HIGHBIT?2:0;
+// 	t->hour += frame_TEST[toggle][18]==HIGHBIT?1:0;
+// 	t->year = millenium;
+// 	t->year += frame_TEST[toggle][45]==HIGHBIT?80:0;
+// 	t->year += frame_TEST[toggle][46]==HIGHBIT?40:0;
+// 	t->year += frame_TEST[toggle][47]==HIGHBIT?20:0;
+// 	t->year += frame_TEST[toggle][48]==HIGHBIT?10:0;
+// 	t->year += frame_TEST[toggle][50]==HIGHBIT?8:0;
+// 	t->year += frame_TEST[toggle][51]==HIGHBIT?4:0;
+// 	t->year += frame_TEST[toggle][52]==HIGHBIT?2:0;
+// 	t->year += frame_TEST[toggle][53]==HIGHBIT?1:0;
+// 	return DECODE_SUCCESS;
+// }
+// #endif
 
 volatile uint8_t sampleCounter = 100;
 volatile uint8_t newBit = NOBIT;
 volatile uint8_t oldBit = NOBIT;
 volatile uint8_t pulseWidth = 0;
 
+volatile uint8_t hum;
+volatile uint8_t temp_frac;
+volatile uint8_t temp_whole;
+
 uint8_t frameindex = 0;
-uint8_t frame[FRAMESIZE], 
-		last_frame[FRAMESIZE];
+uint8_t frame[FRAMESIZE]; 
+
 datetime_t current_dt, 
 		   last_sync_time;
+
+time_t last_good_frame_time;
 
 //  EPD BackImage ref
 uint8_t *BackImage;
@@ -210,6 +219,7 @@ void initialize_core0()
     gpio_pull_up(RADIO_SWITCH_PIN);
 	gpio_put(RADIO_SWITCH_PIN, 0);
 	radio_on = false;	
+	is_datetime_acquired = false;	
 	sleep_ms(100);
 
 	// Take over counting seconds from RTC.
@@ -232,7 +242,7 @@ int main() {
 	pushDateTimeToCore1EPD();
 
 	//  INIT TIMER SAMPLING
-    int hz = 1000; //100;
+    int hz = 100;
     repeating_timer_t timer;
 
     // negative timeout means exact delay (rather than delay between callbacks)
@@ -255,7 +265,11 @@ bool timer_callback(repeating_timer_t *rt)
 	if(sampleCounter<1)
 	{
 		if((pulseWidth>61)&&(pulseWidth<90))
-			newBit = HIGHBIT; //MARKER;
+#if DEBUG==1
+			newBit = HIGHBIT;
+#else
+			newBit = MARKER;
+#endif
 		else if((pulseWidth>31)&&(pulseWidth<60))
 			newBit = HIGHBIT;
 		else if((pulseWidth>5)&&(pulseWidth<30))
@@ -296,39 +310,43 @@ void start_new_frame()
 	char buffer[60];
 	datetime_t frame_datetime;
 
+	// last_sync_time.day = 6;// <--- REMOVE ME
+	// last_sync_time.hour = 3;// <--- REMOVE ME
+	// last_sync_time.dotw = 3;// <--- REMOVE ME
+	// last_sync_time.month = 1;// <--- REMOVE ME
+	// last_sync_time.sec = 3;// <--- REMOVE ME
+	// last_sync_time.min = 3;// <--- REMOVE ME
+	// last_sync_time.year = 2022;// <--- REMOVE ME
+
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
 	{
 #if DEBUG==1
 		printf("Bad Frame\n");
 #endif
+		last_good_frame_time = 0;
 		gpio_put(ACQ_LED_PIN, 0);	
-
-		for(int i = 0; i < FRAMESIZE; i++)last_frame[i] = 0;
 	}
 	else
 	{
-		if(memcmp(last_frame, frame_TEST[toggle], FRAMESIZE)==0)  // if(last_frame == frame)
+		time_t frame_time =  datetimeToTimeT(&frame_datetime);
+
+		if(frame_time == last_good_frame_time + SECS_PER_MIN) 
 		{
+			last_sync_time = current_dt;
 			setRTCDate(&frame_datetime);
 			gpio_put(ACQ_LED_PIN, 1);	
-			last_sync_time = frame_datetime;
-
-			for(int i = 0; i < FRAMESIZE; i++)last_frame[i] = 0;
-
-			//  TODO : stop radio scanning
+			is_datetime_acquired = true;
+			last_good_frame_time = 0;
 		}
 
-		memcpy(last_frame, frame_TEST[toggle], FRAMESIZE);
+		last_good_frame_time = frame_time;
+
 #if DEBUG==1
 		datetime_to_str(buffer, 60, &frame_datetime);
 		printf("%s\n", buffer);
 #endif
 
 	}
-
-	printf("%d\n", toggle);
-
-	getRTCDate(&current_dt);
 	pushDateTimeToCore1EPD();
 	frameindex = 0;
 }
@@ -337,12 +355,14 @@ void pushDateTimeToCore1EPD()
 {
 	uint64_t tx_buffer;
 	char console_buffer[60];
+
+	getRTCDate(&current_dt);
 #if DEBUG==1
 	datetime_to_str(console_buffer, 60, &current_dt);
 	printf("Core0 RTC Time : %s\n", console_buffer);
 #endif
 
-	radio_on = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((current_dt.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
+	radio_on = !is_datetime_acquired && (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((current_dt.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
 	pack_dt(&current_dt, &tx_buffer);
 
     multicore_fifo_push_blocking(tx_buffer>>0x20);
@@ -351,21 +371,21 @@ void pushDateTimeToCore1EPD()
 
 void display_frame()
 {
-	char frameindex_str [2];
-
 	display.clearDisplay();
+	display.fillRect(0, 0, 127, 9, WHITE);   //  Seconds background
+
 	display.cp437(true);
+	display.setTextColor(BLACK, WHITE);
 	display.setTextSize(1);
-	display.setCursor(32,0);
-	display.write('B');
-	display.write('i');
-	display.write('t');
-	display.write(' ');
 
-	itoa(frameindex-1, frameindex_str, 10);
-	display.write(frameindex_str[0]);
-	display.write(frameindex_str[1]);
+	display.setCursor(1,1);
+	display.printf(" %2d   T %02d.%1dC   H %02d%%", frameindex-1
+														, temp_whole
+														, temp_frac
+														, hum);
 
+	display.setTextColor(WHITE);
+	display.setCursor(0,8);
 	for(uint8_t i = 0; i < frameindex; i++)
 	{
 		if(i%10==0) display.write('\n');	
@@ -394,88 +414,109 @@ void display_saver()
 	char frameindex_str [2];
 
 	display.clearDisplay();
+	display.drawLine(0,11,127,11,WHITE);      //  Top line (horiz)
+	display.drawLine(90, 11, 90, 63, WHITE);  //  hum / temp divider (vert)
+	display.fillRect(50, 11, 127, 20, WHITE); //  hum / temp header divider (horiz)
+	display.fillRect(0, 12, 50, 63, WHITE);   //  Seconds background
+
+	//////////  WHITE BG ////////////
+	display.setTextColor(BLACK, WHITE);
+
+	// seconds
+	display.setTextSize(4);
+	display.setCursor(2, 26);
+	display.printf("%02d", frameindex-1);
+
+	// temperature and humidity headers
+	display.setTextSize(1);
+	display.setCursor(54, 19);
+	display.print(" HUM"); 
+	display.setCursor(92, 19);
+	display.print(" TEMP");
+
+	///////////// BLACK  BG ////////////
 	display.setTextColor(WHITE);
-	display.setTextSize(6);
-	display.setCursor(32, 12);
-
-	itoa(frameindex-1, frameindex_str, 10);
-
-	if(strlen(frameindex_str) < 2)
-	{
-		display.write(' ');
-		display.write(frameindex_str[0]);	
-	}
-	else
-	{
-		display.write(frameindex_str[0]);
-		display.write(frameindex_str[1]);
-	}
-
+	display.setTextSize(2);
+	// humidity data
+	display.setCursor(54, 40);
+	display.printf("%2d%%",hum);
+	// temperature data
+	display.setTextSize(1);
+	display.setCursor(96, 45);
+	display.printf("%2d.%1dC",temp_whole, temp_frac);
+	// last sync data
+	display.setCursor(1, 2);
+	display.printf("SYN> %04d-%02d-%02d %02d:%02d", last_sync_time.year, 
+												    last_sync_time.month, 
+												    last_sync_time.day, 
+												    last_sync_time.hour, 
+											        last_sync_time.hour);
 	display.display();
-
 }
 
-// uint8_t decode_frame(datetime_t *t)
-// {
-// 	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-// 	if( frame[0]  != MARKER ) 
-// 		return DECODE_FAIL;
-// 	for(uint8_t i = 1; i<60; i++)
-// 		if( frame[i] == ERRBIT || i % 10 == 9 && frame[i] != MARKER ) 
-// 			return DECODE_FAIL;
-// 	uint8_t leap = 0;
-// 	leap += frame[55]==HIGHBIT?1:0;
-// 	uint8_t dst = 0;
-// 	dst += frame[58]==HIGHBIT?1:0;
-// 	uint16_t dayOfYear = 0;
-//  	dayOfYear += frame[22]==HIGHBIT?200:0;
-//  	dayOfYear += frame[23]==HIGHBIT?100:0;
-//  	dayOfYear += frame[25]==HIGHBIT?80:0;
-//  	dayOfYear += frame[26]==HIGHBIT?40:0;
-//  	dayOfYear += frame[27]==HIGHBIT?20:0;
-//  	dayOfYear += frame[28]==HIGHBIT?10:0;
-//  	dayOfYear += frame[30]==HIGHBIT?8:0;
-//  	dayOfYear += frame[31]==HIGHBIT?4:0;
-//  	dayOfYear += frame[32]==HIGHBIT?2:0;
-//  	dayOfYear += frame[33]==HIGHBIT?1:0;
-// 	t->month = 1;
-// 	while(1)
-// 	{
-// 		uint16_t dim = daysInMonth[t->month];
-// 		if(t->month == 2 && leap == 1) dim++;
-// 		if(dayOfYear <= dim) break;
-// 		dayOfYear -= dim;
-// 		t->month++;
-// 	}
-// 	t->day = dayOfYear;
-//   	t->dotw = 0;
-// 	t->sec = 0; 
-// 	t->min = 0;
-// 	t->min += frame[1]==HIGHBIT?40:0;
-// 	t->min += frame[2]==HIGHBIT?20:0;
-// 	t->min += frame[3]==HIGHBIT?10:0;
-// 	t->min += frame[5]==HIGHBIT?8:0;
-// 	t->min += frame[6]==HIGHBIT?4:0;
-// 	t->min += frame[7]==HIGHBIT?2:0;
-// 	t->min += frame[8]==HIGHBIT?1:0;
-// 	t->hour = 0;
-// 	t->hour += frame[12]==HIGHBIT?20:0;
-// 	t->hour += frame[13]==HIGHBIT?10:0;
-// 	t->hour += frame[15]==HIGHBIT?8:0;
-// 	t->hour += frame[16]==HIGHBIT?4:0;
-// 	t->hour += frame[17]==HIGHBIT?2:0;
-// 	t->hour += frame[18]==HIGHBIT?1:0;
-// 	t->year = millenium;
-// 	t->year += frame[45]==HIGHBIT?80:0;
-// 	t->year += frame[46]==HIGHBIT?40:0;
-// 	t->year += frame[47]==HIGHBIT?20:0;
-// 	t->year += frame[48]==HIGHBIT?10:0;
-// 	t->year += frame[50]==HIGHBIT?8:0;
-// 	t->year += frame[51]==HIGHBIT?4:0;
-// 	t->year += frame[52]==HIGHBIT?2:0;
-// 	t->year += frame[53]==HIGHBIT?1:0;
-// 	return DECODE_SUCCESS;
-// }
+//#if DEBUG != 1
+uint8_t decode_frame(datetime_t *t)
+{
+	uint8_t daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	if( frame[0]  != MARKER ) 
+		return DECODE_FAIL;
+	for(uint8_t i = 1; i<60; i++)
+		if( frame[i] == ERRBIT || i % 10 == 9 && frame[i] != MARKER ) 
+			return DECODE_FAIL;
+	uint8_t leap = 0;
+	leap += frame[55]==HIGHBIT?1:0;
+	uint8_t dst = 0;
+	dst += frame[58]==HIGHBIT?1:0;
+	uint16_t dayOfYear = 0;
+ 	dayOfYear += frame[22]==HIGHBIT?200:0;
+ 	dayOfYear += frame[23]==HIGHBIT?100:0;
+ 	dayOfYear += frame[25]==HIGHBIT?80:0;
+ 	dayOfYear += frame[26]==HIGHBIT?40:0;
+ 	dayOfYear += frame[27]==HIGHBIT?20:0;
+ 	dayOfYear += frame[28]==HIGHBIT?10:0;
+ 	dayOfYear += frame[30]==HIGHBIT?8:0;
+ 	dayOfYear += frame[31]==HIGHBIT?4:0;
+ 	dayOfYear += frame[32]==HIGHBIT?2:0;
+ 	dayOfYear += frame[33]==HIGHBIT?1:0;
+	t->month = 1;
+	while(1)
+	{
+		uint16_t dim = daysInMonth[t->month];
+		if(t->month == 2 && leap == 1) dim++;
+		if(dayOfYear <= dim) break;
+		dayOfYear -= dim;
+		t->month++;
+	}
+	t->day = dayOfYear;
+  	t->dotw = 0;
+	t->sec = 0; 
+	t->min = 0;
+	t->min += frame[1]==HIGHBIT?40:0;
+	t->min += frame[2]==HIGHBIT?20:0;
+	t->min += frame[3]==HIGHBIT?10:0;
+	t->min += frame[5]==HIGHBIT?8:0;
+	t->min += frame[6]==HIGHBIT?4:0;
+	t->min += frame[7]==HIGHBIT?2:0;
+	t->min += frame[8]==HIGHBIT?1:0;
+	t->hour = 0;
+	t->hour += frame[12]==HIGHBIT?20:0;
+	t->hour += frame[13]==HIGHBIT?10:0;
+	t->hour += frame[15]==HIGHBIT?8:0;
+	t->hour += frame[16]==HIGHBIT?4:0;
+	t->hour += frame[17]==HIGHBIT?2:0;
+	t->hour += frame[18]==HIGHBIT?1:0;
+	t->year = millenium;
+	t->year += frame[45]==HIGHBIT?80:0;
+	t->year += frame[46]==HIGHBIT?40:0;
+	t->year += frame[47]==HIGHBIT?20:0;
+	t->year += frame[48]==HIGHBIT?10:0;
+	t->year += frame[50]==HIGHBIT?8:0;
+	t->year += frame[51]==HIGHBIT?4:0;
+	t->year += frame[52]==HIGHBIT?2:0;
+	t->year += frame[53]==HIGHBIT?1:0;
+	return DECODE_SUCCESS;
+}
+//#endif
 
 static void setRTCDate(datetime_t * t)
 {  
@@ -511,11 +552,11 @@ static void getRTCDate(datetime_t * t)
 void setDateTime()
 {
 	datetime_t t;
-	t.day = 20;
+	t.day = 25;
 	t.dotw = 0;
-	t.hour = 0;
-	t.min = 50;
-	t.month = 11;
+	t.hour = 6;
+	t.min = 56;
+	t.month = 12;
 	t.sec = 0;
 	t.year = 2022;
 	setRTCDate(&t);
@@ -573,6 +614,10 @@ void core1_epd()
 		return;
 	}
 
+    // init dht11
+    DHT dht(DHT11_PIN);
+	dht_reading result;
+
 	uint64_t rx_buffer;	
 	datetime_t current_rtc_datetime;
 	static bool radio_initialized = false;
@@ -601,7 +646,13 @@ void core1_epd()
 
 			updateEPD(local);
 		}
-		tight_loop_contents();
+
+        if(dht.readDHT11(&result) == DHTLIB_OK)
+		{
+			hum = result.humidity;
+			temp_frac = result.temp_frac;
+			temp_whole = result.temp_whole;
+		}	
 	}
 }
 
@@ -694,6 +745,7 @@ void power_radio(bool * init)
 		{
 			gpio_init(RADIO_IN_PIN);
 			gpio_set_dir(RADIO_IN_PIN, GPIO_IN);
+			is_datetime_acquired = false;
 			*init = true;
 		}
 	else

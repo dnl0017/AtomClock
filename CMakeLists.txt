@@ -40,7 +40,7 @@ add_executable(AtomClock
         epd/fontOldeEng.c
         epd/fontCurly.c
         epd/fontBroadway.c
-
+        hygrothermograph/DHT.cpp
 )
 
 pico_set_program_name(AtomClock "AtomClock")
