@@ -36,20 +36,19 @@ extern "C" {
 #define DECODE_SUCCESS 	 	1
 #define DECODE_FAIL 	 	0
 
-#define RTC_CS_PIN 		 	17
-#define RTC_IO_PIN 		 	16
-#define RTC_SCLCK_PIN	 	18
+#define RTC_SCLCK_PIN	 	16
+#define RTC_IO_PIN 		 	17
+#define RTC_CS_PIN 		 	18
 
-#define ACQ_LED_PIN  	 	12
-#define DHT11_PIN			11
+#define DHT11_PIN			26 
 
 #define RADIO_IN_PIN	 	19
-#define RADIO_SWITCH_PIN 	9
+#define RADIO_SWITCH_PIN 	15
 #define RADIO_ON_TIME_UTC   1    // 0 .. 23
 #define RADIO_OFF_TIME_UTC  10   // 0 .. 23
 
-static bool radio_on;
-static bool is_datetime_acquired;
+static bool radio_on = false;	
+static bool is_datetime_acquired = false;	
 static const int16_t millenium = 2000;
 bool timer_callback(repeating_timer_t *);
 void start_new_frame();
@@ -87,7 +86,7 @@ const struct{
 	theme thm;
 	const char *name;
 } theme_table[] = {
-	{theme_olde_eng, "Olde"},
+	//{theme_olde_eng, "Olde"},
 	{theme_text, "Text"},
 	{theme_wwvb, "WWVB"},
 	{theme_curly, "Curly"},
@@ -104,7 +103,7 @@ const struct{
 	{"\"Atheism is a non-prophet organization.\"", "   -George Carlin"},
 	{"\"Politics are not my arena Music is.\"", "-Aretha Franklin"},
 	{"\"A winner is a dreamer who never gives up.\"", "       -Nelson Mandela"},
-	{"\"Cow with no legs, ground beef.\"", "-Confucius"},
+	{"\"Cow with no legs, ground beef.\"", "   -Confucius"},
 	{"\"What one fool can         understand, another can.\"", "      -Richard Feynman"},
 	{"\"The spirit of envy can   destroy but never build.\"", "    -Margaret Thatcher"},
 	{"\"The higher up I went, the less happy I was.\"", "        -Dave Chapelle"},

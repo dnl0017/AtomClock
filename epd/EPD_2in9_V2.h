@@ -21,14 +21,14 @@
 #define EPD_2IN9_V2_HEIGHT      296
 
 // SPI Defines
-#define PIN_BUSY 22
-#define PIN_RST  21
-#define PIN_DC   20
+#define PIN_BUSY 6   
+#define PIN_RST  7   
+#define PIN_DC   8   
 
-#define PIN_CLK  14
-#define PIN_MOSI 15  // DIN
-#define PIN_MISO 12
-#define PIN_CS   13
+#define PIN_CLK  10  
+#define PIN_MOSI 11  // DIN
+#define PIN_MISO 12  // NC, not used.
+#define PIN_CS   9   
 
 extern void EPD_2IN9_V2_Init(void);
 extern void EPD_2IN9_V2_Clear(void);
