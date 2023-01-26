@@ -140,7 +140,6 @@ void check_radio_data()
 
 void start_new_frame()
 {
-	char buffer[60];
 	datetime_t frame_datetime;
 
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
@@ -164,13 +163,14 @@ void start_new_frame()
 		last_good_frame_time = frame_time;
 
 #if DEBUG==1
+		char buffer[60];
 		datetime_to_str(buffer, 60, &frame_datetime);
 		printf("%s\n", buffer);
 #endif
 
 	}
 
-    sleep_us(200);
+    //sleep_us(200);
 
 	pushDateTimeToCore1EPD();
 	frameindex = 0;
@@ -179,7 +179,6 @@ void start_new_frame()
 void pushDateTimeToCore1EPD()
 {
 	uint64_t tx_buffer;
-	bool is_within_interval = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((current_dt.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
 
 	getRTCDate(&current_dt);
 
@@ -188,6 +187,8 @@ void pushDateTimeToCore1EPD()
 	datetime_to_str(console_buffer, 60, &current_dt);
 	printf("Core0 RTC Time : %s\n", console_buffer);
 #endif
+
+	bool is_within_interval = (((RADIO_OFF_TIME_UTC-RADIO_ON_TIME_UTC)%24)+24)%24-(((current_dt.hour-RADIO_ON_TIME_UTC)%24)+24)%24>0;
 
 	if(!is_within_interval)
 		is_datetime_acquired = false;
@@ -317,7 +318,7 @@ uint8_t decode_frame(datetime_t *t)
 	}
 	t->day = dayOfYear;
   	t->dotw = 0;
-	t->sec = 0; 
+	t->sec = 1; //0; 
 	t->min = 0;
 	t->min += frame[1]==HIGHBIT?40:0;
 	t->min += frame[2]==HIGHBIT?20:0;
@@ -496,8 +497,7 @@ void updateEPD(time_t t)
 	formatEPDDate(date_buffer, t, tcr->abbrev);	
 	formatEPDTime(time_buffer, hour(t), minute(t));
 
-	theme_table[thm_counter++ % (sizeof(theme_table) / 8)].thm(date_buffer, time_buffer);
-	
+	theme_table[thm_counter++ % (sizeof(theme_table) / 8)].thm(date_buffer, time_buffer);	
 
     EPD_2IN9_V2_Display(BackImage);
 	sleep_ms(300);
@@ -646,7 +646,7 @@ void theme_flash(char *date, char *time)
 }
 
 
-/////////////////////////////////////////////	 COMMON     /////////////////////////////////	
+///////////////////////////////////////////////	 COMMON     /////////////////////////////////	
 void pack(uint32_t *buf, 
 		  int8_t *b1, 
 		  int8_t *b2, 

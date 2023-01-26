@@ -42,7 +42,7 @@ extern "C" {
 
 #define DHT11_PIN			26 
 
-#define RADIO_IN_PIN	 	19
+#define RADIO_IN_PIN	 	20//19
 #define RADIO_SWITCH_PIN 	15
 #define RADIO_ON_TIME_UTC   1    // 0 .. 23
 #define RADIO_OFF_TIME_UTC  10   // 0 .. 23
@@ -86,7 +86,7 @@ const struct{
 	theme thm;
 	const char *name;
 } theme_table[] = {
-	//{theme_olde_eng, "Olde"},
+	{theme_olde_eng, "Olde"},
 	{theme_text, "Text"},
 	{theme_wwvb, "WWVB"},
 	{theme_curly, "Curly"},
