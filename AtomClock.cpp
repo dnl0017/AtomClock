@@ -145,7 +145,7 @@ void start_new_frame()
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
 	{
 		last_good_frame_time = 0;
-		//sleep_us(200);
+		sleep_us(200);
 	}
 	else
 	{
@@ -157,7 +157,7 @@ void start_new_frame()
 			setRTCDate(&frame_datetime);
 			is_datetime_acquired = true;
 			last_good_frame_time = 0;
-			//sleep_us(200);
+			sleep_us(200);
 		}
 
 		last_good_frame_time = frame_time;
@@ -170,7 +170,7 @@ void start_new_frame()
 
 	}
 
-    //sleep_us(200);
+    sleep_us(200);
 
 	pushDateTimeToCore1EPD();
 	frameindex = 0;
@@ -318,7 +318,7 @@ uint8_t decode_frame(datetime_t *t)
 	}
 	t->day = dayOfYear;
   	t->dotw = 0;
-	t->sec = 1; //0; 
+	t->sec = 0; 
 	t->min = 0;
 	t->min += frame[1]==HIGHBIT?40:0;
 	t->min += frame[2]==HIGHBIT?20:0;
@@ -380,13 +380,13 @@ static void getRTCDate(datetime_t * t)
 void setDateTime()
 {
 	datetime_t t;
-	t.day = 25;
+	t.day = 19;
 	t.dotw = 0;
-	t.hour = 6;
-	t.min = 56;
-	t.month = 12;
+	t.hour = 19;
+	t.min = 17;
+	t.month = 5;
 	t.sec = 0;
-	t.year = 2022;
+	t.year = 2024;
 	setRTCDate(&t);
 }
 
@@ -455,7 +455,7 @@ void core1_epd()
 	{
         if(multicore_fifo_rvalid()){
 			rx_buffer = multicore_fifo_pop_blocking();
-			rx_buffer = rx_buffer << 0x20;
+			rx_buffer <<= 0x20;
 			rx_buffer |= multicore_fifo_pop_blocking();
 
 			unpack_dt(&rx_buffer, &current_rtc_datetime);
@@ -674,7 +674,7 @@ void unpack(uint32_t *buf,
 
 void pack_dt(datetime_t * src,
 			 uint64_t * dest){
-	*dest |= src->year;
+	*dest = src->year;
 	*dest <<= 8;
 	*dest |= src->month;
 	*dest <<= 8;
@@ -691,7 +691,7 @@ void pack_dt(datetime_t * src,
 
 void unpack_dt(uint64_t *src, 
 			   datetime_t * dest){
-	dest->year = *src >> 48;
+	dest->year = *src >> 48;    
 	dest->month = *src >> 40;
 	dest->day = *src >> 32;
 	dest->dotw = *src >> 24;

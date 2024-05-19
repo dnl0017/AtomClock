@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define DEBUG				0
+#define DEBUG				1
 
 #define ERRBIT			 	4			
 #define MARKER 			 	3
@@ -44,8 +44,8 @@ extern "C" {
 
 #define RADIO_IN_PIN	 	20//19
 #define RADIO_SWITCH_PIN 	15
-#define RADIO_ON_TIME_UTC   1    // 0 .. 23
-#define RADIO_OFF_TIME_UTC  10   // 0 .. 23
+#define RADIO_ON_TIME_UTC   19    //  1 UTC = 21:00 Eastern (0 .. 23)
+#define RADIO_OFF_TIME_UTC  21   // 10 UTC = 06:00 Eastern (0 .. 23)
 
 static bool radio_on = false;	
 static bool is_datetime_acquired = false;	
