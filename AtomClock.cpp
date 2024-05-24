@@ -37,9 +37,10 @@ void initialize_core0()
 	// Init RTC
   	ds1302setup(RTC_SCLCK_PIN, RTC_IO_PIN, RTC_CS_PIN);
 	sleep_ms(100);
+	setDateTime();      //  <- Uncomment for setting time / date during debugging.
 
     // Init SSD1306 display
-	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
+	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // SSD1306_SWITCHCAPVCC
 	display.clearDisplay();
 	display.setTextColor(WHITE);
 	display.setTextSize(3);
@@ -65,10 +66,7 @@ int main() {
 
 	initialize_core0();
 
-	//setDateTime();
-	//srand(time_us_64());
-
-    // lcd handled by core1.
+    // initialize_core1.
     multicore_launch_core1(core1_epd);   
 
 	pushDateTimeToCore1EPD();
@@ -97,18 +95,23 @@ int main() {
 
 bool timer_callback(repeating_timer_t *rt) 
 {
-	pulseWidth += radio_on ? !gpio_get(RADIO_IN_PIN) : 0;	
+	pulseWidth += radio_on ? !gpio_get(RADIO_IN_PIN) : 0;
+
 	sampleCounter--;
 	if(sampleCounter<1)
 	{
-		if((pulseWidth>61)&&(pulseWidth<90))
+		if((pulseWidth>=60)&&(pulseWidth<90))
 			newBit = MARKER;
-		else if((pulseWidth>31)&&(pulseWidth<60))
+		else if((pulseWidth>=30)&&(pulseWidth<60))
 			newBit = HIGHBIT;
 		else if((pulseWidth>5)&&(pulseWidth<30))
 			newBit = LOWBIT;
 		else
 			newBit = ERRBIT;
+
+#if DEBUG == 1
+	printf("pulseWidth: %d\nnewBit: %d\n", pulseWidth, newBit);
+#endif			
 
 		sampleCounter = 100;
 		pulseWidth = 0;
@@ -121,9 +124,7 @@ void check_radio_data()
 {
 	if(newBit != NOBIT)
 	{		
-		if(frameindex>59)
-			start_new_frame();
-		else if((newBit==MARKER)&&(oldBit==MARKER))
+		if(frameindex>59 || newBit==MARKER && oldBit==MARKER)
 			start_new_frame();
 
 		frame[frameindex++] = newBit;
@@ -143,10 +144,7 @@ void start_new_frame()
 	datetime_t frame_datetime;
 
 	if(decode_frame(&frame_datetime)==DECODE_FAIL)
-	{
 		last_good_frame_time = 0;
-		sleep_us(200);
-	}
 	else
 	{
 		time_t frame_time =  datetimeToTimeT(&frame_datetime);
@@ -157,23 +155,15 @@ void start_new_frame()
 			setRTCDate(&frame_datetime);
 			is_datetime_acquired = true;
 			last_good_frame_time = 0;
-			sleep_us(200);
 		}
-
-		last_good_frame_time = frame_time;
-
-#if DEBUG==1
-		char buffer[60];
-		datetime_to_str(buffer, 60, &frame_datetime);
-		printf("%s\n", buffer);
-#endif
-
+		else
+			last_good_frame_time = frame_time;
 	}
 
     sleep_us(200);
 
 	pushDateTimeToCore1EPD();
-	frameindex = 0;
+	frameindex = 0;	
 }
 
 void pushDateTimeToCore1EPD()
@@ -380,10 +370,10 @@ static void getRTCDate(datetime_t * t)
 void setDateTime()
 {
 	datetime_t t;
-	t.day = 19;
-	t.dotw = 0;
-	t.hour = 19;
-	t.min = 17;
+	t.day = 23;
+	t.dotw = 4;
+	t.hour = 21;
+	t.min = 20;
 	t.month = 5;
 	t.sec = 0;
 	t.year = 2024;
