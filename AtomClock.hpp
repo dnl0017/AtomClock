@@ -35,6 +35,7 @@ extern "C" {
 #define FRAMESIZE 		 	60
 #define DECODE_SUCCESS 	 	1
 #define DECODE_FAIL 	 	0
+#define TM_FREQ_HZ			100
 
 #define RTC_SCLCK_PIN	 	16
 #define RTC_IO_PIN 		 	17
@@ -45,7 +46,7 @@ extern "C" {
 #define RADIO_IN_PIN	 	20//19
 #define RADIO_SWITCH_PIN 	15
 #define RADIO_ON_TIME_UTC   0    //  1 UTC = 21:00 Eastern (0 .. 23)
-#define RADIO_OFF_TIME_UTC  9    // 10 UTC = 06:00 Eastern (0 .. 23)
+#define RADIO_OFF_TIME_UTC  23    // 10 UTC = 06:00 Eastern (0 .. 23)
 
 static bool radio_on = false;	
 static bool is_datetime_acquired = false;	

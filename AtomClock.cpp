@@ -1,6 +1,6 @@
 #include "AtomClock.hpp"
 
-volatile uint8_t sampleCounter = 100;
+volatile uint8_t sampleCounter = TM_FREQ_HZ;
 volatile uint8_t newBit = NOBIT;
 volatile uint8_t oldBit = NOBIT;
 volatile uint8_t pulseWidth = 0;
@@ -24,6 +24,37 @@ uint8_t *BackImage;
 // Wire is GPIO 4 & 5, Wire1 is GPIO 10 & 11
 Adafruit_SSD1306 display(LCDWIDTH, LCDHEIGHT, &Wire);
 
+//  INIT TIMER SAMPLING
+repeating_timer_t timer;
+
+bool timer_callback(repeating_timer_t *rt) 
+{
+	pulseWidth += radio_on ? !gpio_get(RADIO_IN_PIN) : 0;
+
+	sampleCounter--;
+	if(sampleCounter<1)
+	{
+		if((pulseWidth>=70)&&(pulseWidth<=90))
+			newBit = MARKER;
+		else if((pulseWidth>=40)&&(pulseWidth<=60))
+			newBit = HIGHBIT;
+		else if((pulseWidth>=10)&&(pulseWidth<=30))
+			newBit = LOWBIT;
+		else
+			newBit = ERRBIT;
+
+#if DEBUG == 1
+	printf("pulseWidth: %d\nnewBit: %d\n", pulseWidth, newBit);
+#endif			
+
+		sampleCounter = TM_FREQ_HZ;
+		pulseWidth = 0;
+	}
+
+    return true; // keep repeating
+}
+
+
 // Eastern Time Zone (Toronto, New York)
 TimeChangeRule myDST = {"EDT", Second, Sun, Mar, 2, -240};    // Daylight time = UTC - 4 hours
 TimeChangeRule mySTD = {"EST", First, Sun, Nov, 2, -300};     // Standard time = UTC - 5 hours
@@ -37,7 +68,7 @@ void initialize_core0()
 	// Init RTC
   	ds1302setup(RTC_SCLCK_PIN, RTC_IO_PIN, RTC_CS_PIN);
 	sleep_ms(100);
-	setDateTime();      //  <- Uncomment for setting time / date during debugging.
+	//setDateTime();      //  <- Uncomment for setting time / date during debugging.
 
     // Init SSD1306 display
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // SSD1306_SWITCHCAPVCC
@@ -52,13 +83,22 @@ void initialize_core0()
 	// Init Radio switch
 	gpio_init(RADIO_SWITCH_PIN);
 	gpio_set_dir(RADIO_SWITCH_PIN, GPIO_OUT);    
-    gpio_pull_up(RADIO_SWITCH_PIN);
+    //gpio_pull_up(RADIO_SWITCH_PIN);
 	gpio_put(RADIO_SWITCH_PIN, 0);
 	sleep_ms(100);
 
 	// Take over counting seconds from RTC.
 	getRTCDate(&current_dt);
 	frameindex = current_dt.sec;
+
+	// negative timeout means exact delay (rather than delay between callbacks)
+	//if (!add_repeating_timer_us(-1000000 / TM_FREQ_HZ, timer_callback, NULL, &timer)) {
+	if (!add_repeating_timer_ms(-1000 / TM_FREQ_HZ, timer_callback, NULL, &timer)) {
+#if DEBUG==1
+		printf("Failed to add timer\n");
+#endif
+		exit(-1);
+	}
 }
 
 int main() {
@@ -72,18 +112,6 @@ int main() {
 	pushDateTimeToCore1EPD();
 	sleep_ms(100);
 
-	//  INIT TIMER SAMPLING
-    int hz = 100;
-    repeating_timer_t timer;
-
-    // negative timeout means exact delay (rather than delay between callbacks)
-    if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &timer)) {
-#if DEBUG==1
-        printf("Failed to add timer\n");
-#endif
-        exit(-1);
-    }
-
 	while(1)
     {
 		check_radio_data();
@@ -91,33 +119,6 @@ int main() {
 	}
 
     return 0;
-}
-
-bool timer_callback(repeating_timer_t *rt) 
-{
-	pulseWidth += radio_on ? !gpio_get(RADIO_IN_PIN) : 0;
-
-	sampleCounter--;
-	if(sampleCounter<1)
-	{
-		if((pulseWidth>=60)&&(pulseWidth<90))
-			newBit = MARKER;
-		else if((pulseWidth>=30)&&(pulseWidth<60))
-			newBit = HIGHBIT;
-		else if((pulseWidth>5)&&(pulseWidth<30))
-			newBit = LOWBIT;
-		else
-			newBit = ERRBIT;
-
-#if DEBUG == 1
-	printf("pulseWidth: %d\nnewBit: %d\n", pulseWidth, newBit);
-#endif			
-
-		sampleCounter = 100;
-		pulseWidth = 0;
-	}
-
-    return true; // keep repeating
 }
 
 void check_radio_data()
@@ -370,13 +371,13 @@ static void getRTCDate(datetime_t * t)
 void setDateTime()
 {
 	datetime_t t;
-	t.day = 23;
-	t.dotw = 4;
-	t.hour = 21;
-	t.min = 20;
-	t.month = 5;
-	t.sec = 0;
 	t.year = 2024;
+	t.month = 5;
+	t.day = 28;
+	t.dotw = 3;
+	t.hour = 15;
+	t.min = 25;
+	t.sec = 0;
 	setRTCDate(&t);
 }
 
@@ -463,13 +464,13 @@ void core1_epd()
 			time_t local = myTZ.toLocal(utc, &tcr);
 
 			updateEPD(local);
-		}
 
-        if(dht.readDHT11(&result) == DHTLIB_OK)
-		{
-			hum = result.humidity;
-			temp_frac = result.temp_frac;
-			temp_whole = result.temp_whole;
+			if(dht.readDHT11(&result) == DHTLIB_OK)
+			{
+				hum = result.humidity;
+				temp_frac = result.temp_frac;
+				temp_whole = result.temp_whole;
+			}
 		}	
 	}
 }
@@ -557,6 +558,8 @@ time_t datetimeToTimeT(datetime_t * t)
 
 void power_radio(bool * init)
 {
+	gpio_put(RADIO_SWITCH_PIN, radio_on);
+
 	if(radio_on)
 		if(!(*init))
 		{
@@ -567,7 +570,6 @@ void power_radio(bool * init)
 	else
 		*init = false;
 
-	gpio_put(RADIO_SWITCH_PIN, radio_on);
 } 
 
 //  THEMES!!
