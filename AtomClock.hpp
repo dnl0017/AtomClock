@@ -46,11 +46,49 @@ extern "C" {
 #define RADIO_IN_PIN	 	20//19
 #define RADIO_SWITCH_PIN 	15
 #define RADIO_ON_TIME_UTC   0    //  1 UTC = 21:00 Eastern (0 .. 23)
-#define RADIO_OFF_TIME_UTC  23    // 10 UTC = 06:00 Eastern (0 .. 23)
+#define RADIO_OFF_TIME_UTC  9    // 10 UTC = 06:00 Eastern (0 .. 23)
 
 static bool radio_on = false;	
 static bool is_datetime_acquired = false;	
 static const int16_t millenium = 2000;
+
+volatile uint8_t sampleCounter = TM_FREQ_HZ;
+volatile uint8_t pulseWidth = 0;
+volatile uint8_t newBit = NOBIT;
+
+uint8_t oldBit = NOBIT; // volatile uint8_t oldBit = NOBIT;
+uint8_t hum;  			// volatile uint8_t hum;
+uint8_t temp_frac;  	// volatile uint8_t temp_frac;
+uint8_t temp_whole;  	// volatile uint8_t temp_whole;
+
+uint8_t frameindex = 0;
+uint8_t frame[FRAMESIZE]; 
+
+datetime_t current_dt, 
+		   last_sync_time;
+
+time_t last_good_frame_time;
+
+//  EPD BackImage ref
+uint8_t *BackImage;
+
+// INIT SSD1306 DISPLAY
+// Wire is GPIO 4 & 5, Wire1 is GPIO 10 & 11
+Adafruit_SSD1306 display(LCDWIDTH, LCDHEIGHT, &Wire);
+
+//  INIT TIMER SAMPLING
+repeating_timer_t timer;
+
+dht_reading result;
+
+// Eastern Time Zone (Toronto, New York)
+TimeChangeRule myDST = {"EDT", Second, Sun, Mar, 2, -240};    // Daylight time = UTC - 4 hours
+TimeChangeRule mySTD = {"EST", First, Sun, Nov, 2, -300};     // Standard time = UTC - 5 hours
+Timezone myTZ(myDST, mySTD);
+
+// pointer to the time change rule, use to get TZ abbrev
+TimeChangeRule *tcr;  
+
 bool timer_callback(repeating_timer_t *);
 void start_new_frame();
 void check_radio_data();
@@ -80,7 +118,7 @@ void theme_city(char *, char *);
 void theme_text(char *, char *);
 void theme_flash(char *, char *);
 
-static unsigned int thm_counter = 0;
+static uint8_t thm_counter = 0;
 
 typedef void (*theme)(char *, char *);
 const struct{

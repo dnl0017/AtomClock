@@ -1,31 +1,5 @@
 #include "AtomClock.hpp"
 
-volatile uint8_t sampleCounter = TM_FREQ_HZ;
-volatile uint8_t newBit = NOBIT;
-volatile uint8_t oldBit = NOBIT;
-volatile uint8_t pulseWidth = 0;
-
-volatile uint8_t hum;
-volatile uint8_t temp_frac;
-volatile uint8_t temp_whole;
-
-uint8_t frameindex = 0;
-uint8_t frame[FRAMESIZE]; 
-
-datetime_t current_dt, 
-		   last_sync_time;
-
-time_t last_good_frame_time;
-
-//  EPD BackImage ref
-uint8_t *BackImage;
-
-// INIT SSD1306 DISPLAY
-// Wire is GPIO 4 & 5, Wire1 is GPIO 10 & 11
-Adafruit_SSD1306 display(LCDWIDTH, LCDHEIGHT, &Wire);
-
-//  INIT TIMER SAMPLING
-repeating_timer_t timer;
 
 bool timer_callback(repeating_timer_t *rt) 
 {
@@ -53,15 +27,6 @@ bool timer_callback(repeating_timer_t *rt)
 
     return true; // keep repeating
 }
-
-
-// Eastern Time Zone (Toronto, New York)
-TimeChangeRule myDST = {"EDT", Second, Sun, Mar, 2, -240};    // Daylight time = UTC - 4 hours
-TimeChangeRule mySTD = {"EST", First, Sun, Nov, 2, -300};     // Standard time = UTC - 5 hours
-Timezone myTZ(myDST, mySTD);
-
-// pointer to the time change rule, use to get TZ abbrev
-TimeChangeRule *tcr;  
 
 void initialize_core0()
 {
@@ -372,11 +337,11 @@ void setDateTime()
 {
 	datetime_t t;
 	t.year = 2024;
-	t.month = 5;
-	t.day = 28;
-	t.dotw = 3;
-	t.hour = 15;
-	t.min = 25;
+	t.month = 6;
+	t.day = 2;
+	t.dotw = 6;
+	t.hour = 17;
+	t.min = 23;
 	t.sec = 0;
 	setRTCDate(&t);
 }
@@ -435,7 +400,7 @@ void core1_epd()
 
     // init dht11
     DHT dht(DHT11_PIN);
-	dht_reading result;
+	//dht_reading result;
 
 	uint64_t rx_buffer;	
 	datetime_t current_rtc_datetime;
@@ -457,7 +422,7 @@ void core1_epd()
 			datetime_to_str(console_buf, 60, &current_rtc_datetime);
 			printf("Core1 RTC Time : %s\n", console_buf);
 #endif
-			time_t utc = datetimeToTimeT(&current_rtc_datetime) + 60;
+			time_t utc = datetimeToTimeT(&current_rtc_datetime);// + 60;
 
 		    setTime(utc);
 
